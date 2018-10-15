@@ -14,7 +14,34 @@
 
 LOCAL_PATH := $(call my-dir)
 
+<<<<<<< HEAD
 include $(CLEAR_VARS)
+=======
+# Create symbolic links for WLAN
+$(shell mkdir -p $(TARGET_OUT_VENDOR)/firmware/wlan/qca_cld; \
+ln -sf /vendor/etc/wifi/WCNSS_qcom_cfg.ini \
+$(TARGET_OUT_VENDOR)/firmware/wlan/qca_cld/WCNSS_qcom_cfg.ini)
+
+endif
+
+#Create dsp directory
+$(shell mkdir -p $(TARGET_OUT_VENDOR)/lib/dsp)
+
+# Create symbolic links for msadp
+$(shell  mkdir -p $(TARGET_OUT_VENDOR)/firmware; \
+	ln -sf /dev/block/bootdevice/by-name/msadp \
+	$(TARGET_OUT_VENDOR)/firmware/msadp)
+
+#----------------------------------------------------------------------
+# Radio image
+#----------------------------------------------------------------------
+ifeq ($(ADD_RADIO_FILES), true)
+radio_dir := $(LOCAL_PATH)/radio
+RADIO_FILES := $(shell cd $(radio_dir) ; ls)
+$(foreach f, $(RADIO_FILES), \
+	$(call add-radio-file,radio/$(f)))
+endif
+>>>>>>> 537d78844a1c068c71f6eb2f8483b242cdd8b1ca
 
 # Set the firmware path in the environment
 target_firmware_path := $(ANDROID_BUILD_TOP)/vendor/oneplus/oneplus5/firmware_images/

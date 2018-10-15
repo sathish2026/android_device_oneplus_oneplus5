@@ -6,6 +6,7 @@
 TARGET_BOARD_PLATFORM := msm8998
 TARGET_BOOTLOADER_BOARD_NAME := msm8998
 
+TARGET_SCVE_DISABLED := true
 TARGET_ARCH := arm64
 TARGET_ARCH_VARIANT := armv8-a
 TARGET_CPU_ABI := arm64-v8a
@@ -13,10 +14,10 @@ TARGET_CPU_ABI2 :=
 TARGET_CPU_VARIANT := generic
 
 TARGET_2ND_ARCH := arm
-TARGET_2ND_ARCH_VARIANT := armv7-a-neon
+TARGET_2ND_ARCH_VARIANT := armv8-a
 TARGET_2ND_CPU_ABI := armeabi-v7a
 TARGET_2ND_CPU_ABI2 := armeabi
-TARGET_2ND_CPU_VARIANT := cortex-a9
+TARGET_2ND_CPU_VARIANT := cortex-a73
 
 #Enable HW based full disk encryption
 TARGET_HW_DISK_ENCRYPTION := true
@@ -45,6 +46,27 @@ BOARD_BOOTIMAGE_PARTITION_SIZE := 0x04000000
 BOARD_RECOVERYIMAGE_PARTITION_SIZE := 0x04000000
 BOARD_CACHEIMAGE_PARTITION_SIZE := 268435456
 BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE := ext4
+<<<<<<< HEAD
+=======
+# Enable System As Root even for non-A/B from P onwards
+BOARD_BUILD_SYSTEM_ROOT_IMAGE := true
+endif
+
+ifeq ($(ENABLE_AB), true)
+  ifeq ($(ENABLE_VENDOR_IMAGE), true)
+    TARGET_RECOVERY_FSTAB := device/qcom/msm8998/recovery_AB_split_variant.fstab
+  else
+    TARGET_RECOVERY_FSTAB := device/qcom/msm8998/recovery_AB_non-split_variant.fstab
+  endif
+else
+  ifeq ($(ENABLE_VENDOR_IMAGE), true)
+    TARGET_RECOVERY_FSTAB := device/qcom/msm8998/recovery_non-AB_split_variant.fstab
+  else
+    TARGET_RECOVERY_FSTAB := device/qcom/msm8998/recovery_non-AB_non-split_variant.fstab
+  endif
+endif
+
+>>>>>>> 537d78844a1c068c71f6eb2f8483b242cdd8b1ca
 BOARD_SYSTEMIMAGE_PARTITION_SIZE := 3221225472
 BOARD_USERDATAIMAGE_PARTITION_SIZE :=  32212254720
 BOARD_PERSISTIMAGE_PARTITION_SIZE := 33554432
@@ -58,7 +80,22 @@ TARGET_USES_GRALLOC1 := true
 TARGET_USES_QCOM_DISPLAY_BSP := true
 TARGET_USES_COLOR_METADATA := true
 
+<<<<<<< HEAD
 BOARD_KERNEL_CMDLINE += androidboot.hardware=qcom user_debug=31 msm_rtb.filter=0x237 ehci-hcd.park=3 lpm_levels.sleep_disabled=1 sched_enable_hmp=1 sched_enable_power_aware=1 service_locator.enable=1 swiotlb=2048
+=======
+ifeq ($(BOARD_KERNEL_CMDLINE),)
+ifeq ($(TARGET_KERNEL_VERSION),4.4)
+     BOARD_KERNEL_CMDLINE += console=ttyMSM0,115200,n8 androidboot.console=ttyMSM0 earlycon=msm_serial_dm,0xc1b0000
+else
+     BOARD_KERNEL_CMDLINE += console=ttyHSL0,115200,n8 androidboot.console=ttyHSL0 earlycon=msm_hsl_uart,0xc1b0000
+endif
+BOARD_KERNEL_CMDLINE += androidboot.hardware=qcom user_debug=31 msm_rtb.filter=0x37 ehci-hcd.park=3 lpm_levels.sleep_disabled=1 sched_enable_hmp=1 sched_enable_power_aware=1 service_locator.enable=1 swiotlb=2048 androidboot.configfs=true androidboot.usbcontroller=a800000.dwc3 firmware_class.path=/vendor/firmware_mnt/image loop.max_part=7
+endif
+
+BOARD_SECCOMP_POLICY := device/qcom/$(TARGET_BOARD_PLATFORM)/seccomp
+
+BOARD_EGL_CFG := device/qcom/$(TARGET_BOARD_PLATFORM)/egl.cfg
+>>>>>>> 537d78844a1c068c71f6eb2f8483b242cdd8b1ca
 
 BOARD_KERNEL_BASE        := 0x00000000
 BOARD_KERNEL_PAGESIZE    := 4096
@@ -83,6 +120,7 @@ OVERRIDE_RS_DRIVER := libRSDriver_adreno.so
 TARGET_USES_C2D_COMPOSITION := true
 
 BOARD_USES_GENERIC_AUDIO := true
+USE_CAMERA_STUB := false
 BOARD_QTI_CAMERA_32BIT_ONLY := true
 TARGET_NO_RPC := true
 
@@ -126,6 +164,7 @@ BOARD_USES_LIBC_WRAPPER := true
 # Releasetools extension for shipping firmware
 TARGET_RELEASETOOLS_EXTENSIONS := device/oneplus/oneplus5
 
+<<<<<<< HEAD
 # Wifi
 BOARD_HAS_QCOM_WLAN := true
 BOARD_HAS_QCOM_WLAN_SDK := true
@@ -161,3 +200,17 @@ endif
 
 # inherit from the proprietary version
 -include vendor/oneplus/oneplus5/BoardConfigVendor.mk
+=======
+#Enable DRM plugins 64 bit compilation
+TARGET_ENABLE_MEDIADRM_64 := true
+
+ifneq ($(AB_OTA_UPDATER),true)
+    TARGET_RECOVERY_UPDATER_LIBS += librecovery_updater_msm
+endif
+
+BOARD_VNDK_VERSION := current
+
+#Flag to enable System SDK Requirements.
+#All vendor APK will be compiled against system_current API set.
+BOARD_SYSTEMSDK_VERSIONS:=28
+>>>>>>> 537d78844a1c068c71f6eb2f8483b242cdd8b1ca

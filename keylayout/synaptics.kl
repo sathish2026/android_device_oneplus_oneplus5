@@ -25,6 +25,14 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+<<<<<<< HEAD:keylayout/synaptics.kl
 key 580   APP_SWITCH VIRTUAL
 key 158   BACK VIRTUAL
 key 143   WAKEUP VIRTUAL
+=======
+while [ "$registered" != "true" ]
+do
+    sleep 0.1
+    registered="`getprop vendor.sys.listeners.registered`"
+done
+>>>>>>> 537d78844a1c068c71f6eb2f8483b242cdd8b1ca:init.qti.qseecomd.sh
