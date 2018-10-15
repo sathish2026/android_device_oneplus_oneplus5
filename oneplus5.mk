@@ -20,8 +20,6 @@ ifeq ($(ENABLE_VENDOR_IMAGE), true)
 #TARGET_USES_QTIC_EXTENSION := false
 endif
 
-TARGET_KERNEL_VERSION := 4.4
-
 ifeq ($(TARGET_USES_NQ_NFC),true)
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/nfc/libnfc-brcm.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-nci.conf
@@ -115,7 +113,7 @@ PRODUCT_PACKAGES += \
     libqcomvisualizer \
     libqcomvoiceprocessing \
     android.hardware.audio@4.0-impl \
-    android.hardware.audio@2.0-service
+    android.hardware.audio@4.0-service
 
 PRODUCT_PACKAGES += android.hardware.media.omx@1.0-impl
 
@@ -166,7 +164,7 @@ PRODUCT_PACKAGES += \
     android.hardware.memtrack@1.0-service \
     android.hardware.light@2.0-impl \
     android.hardware.light@2.0-service \
-    android.hardware.configstore@1.0-service
+    android.hardware.configstore@1.1-service
 
 PRODUCT_PACKAGES += \
     vendor.display.color@1.0-service \

@@ -1,4 +1,5 @@
 TARGET_USE_VENDOR_CAMERA_EXT := true
+TARGET_USE_QTI_BT_STACK := true
 
 # Below projects/packages with LOCAL_MODULEs will be used by
 # PRODUCT_PACKAGES to build LOCAL_MODULEs that are tagged with
@@ -41,9 +42,6 @@ ALSA_UCM += snd_soc_msm_samarium_Tapan
 #ANGLE
 ANGLE := libangle
 
-#APPOPS_POLICY
-APPOPS_POLICY := appops_policy.xml
-
 AUDIO_HARDWARE := audio.primary.mpq8064
 AUDIO_HARDWARE += audio.primary.apq8084
 AUDIO_HARDWARE += audio.primary.msm8960
@@ -73,6 +71,10 @@ AUDIO_HARDWARE += audio.primary.msm8998
 AUDIO_HARDWARE += audio.primary.sdm660
 AUDIO_HARDWARE += audio.primary.sdm845
 AUDIO_HARDWARE += audio.primary.apq8098_latv
+AUDIO_HARDWARE += audio.primary.sdm710
+AUDIO_HARDWARE += audio.primary.qcs605
+AUDIO_HARDWARE += audio.primary.msmnile
+AUDIO_HARDWARE += audio.primary.$(MSMSTEPPE)
 #
 AUDIO_POLICY := audio_policy.mpq8064
 AUDIO_POLICY += audio_policy.apq8084
@@ -87,6 +89,7 @@ AUDIO_POLICY += audio_policy.msm7627a
 AUDIO_POLICY += audio_policy.msm7630_surf
 AUDIO_POLICY += audio_policy.msm7630_fusion
 #AUDIO_POLICY += audio_policy.default
+AUDIO_POLICY += audio_policy.conf
 AUDIO_POLICY += audio_policy_8064.conf
 AUDIO_POLICY += audio_policy.msm8916
 AUDIO_POLICY += audio_policy.msm8909
@@ -97,6 +100,15 @@ AUDIO_POLICY += audio_policy.msm8952
 AUDIO_POLICY += audio_policy.msm8937
 AUDIO_POLICY += audio_policy.msm8953
 AUDIO_POLICY += audio_policy.msmgold
+
+#HAL Wrapper
+AUDIO_WRAPPER := libqahw
+AUDIO_WRAPPER += libqahwwrapper
+
+#HAL Test app
+AUDIO_HAL_TEST_APPS := hal_play_test
+AUDIO_HAL_TEST_APPS += hal_rec_test
+
 #tinyalsa test apps
 TINY_ALSA_TEST_APPS := tinyplay
 TINY_ALSA_TEST_APPS += tinycap
@@ -125,7 +137,9 @@ BT += libbt-vendor
 BT += libbthost_if
 BT += libbt-logClient
 BT += bt_logger
-#BT += libbt-hidlclient
+ifeq ($(TARGET_USE_QTI_BT_STACK), true)
+BT += libbluetooth_qti
+endif
 
 #C2DColorConvert
 C2DCC := libc2dcolorconvert
@@ -150,6 +164,12 @@ CONNECTIVITY += services-ext
 #CURL
 CURL := libcurl
 CURL += curl
+
+#DASH
+DASH := libdashplayer
+DASH += libqcmediaplayer
+DASH += qcmediaplayer
+DASH += libextmedia_jni
 
 #EXTENDEDMEDIA_EXT
 EXTENDEDMEDIA_EXT := libextendedmediaextractor
@@ -177,6 +197,7 @@ FM := qcom.fmradio
 FM += libqcomfm_jni
 FM += libfmjni
 #FM += fm_helium
+FM += ftm_fm_lib
 #FM += libfm-hci
 
 #GPS
@@ -190,6 +211,8 @@ GPS_HARDWARE += libgnss
 GPS_HARDWARE += liblocation_api
 GPS_HARDWARE += android.hardware.gnss@1.0-impl-qti
 GPS_HARDWARE += android.hardware.gnss@1.0-service-qti
+GPS_HARDWARE += android.hardware.gnss@1.1-impl-qti
+GPS_HARDWARE += android.hardware.gnss@1.1-service-qti
 
 #HDMID
 HDMID := hdmid
@@ -214,14 +237,10 @@ INIT += init.target.8x25.sh
 INIT += init.qcom.mdm_links.sh
 INIT += init.qcom.sensor.sh
 INIT += init.target.rc
-INIT += init.qti.ims.sh
-INIT += init.qcom.coex.sh
 INIT += init.qcom.early_boot.sh
 INIT += init.qcom.post_boot.sh
 INIT += init.qcom.rc
 INIT += init.recovery.qcom.rc
-INIT += init.qcom.factory.rc
-INIT += init.qcom.sdio.sh
 INIT += init.qcom.sh
 INIT += init.class_main.sh
 INIT += vold.fstab
@@ -229,16 +248,12 @@ INIT += init.qcom.ril.path.sh
 INIT += init.qcom.usb.rc
 INIT += init.qcom.usb.sh
 INIT += ueventd.qcom.rc
-INIT += qca6234-service.sh
 INIT += ssr_setup
 INIT += enable_swap.sh
-INIT += init.mdm.sh
 INIT += fstab.qcom
 INIT += init.qcom.sensors.sh
-INIT += init.qcom.crashdata.sh
 INIT += init.qcom.vendor.rc
 INIT += init.target.vendor.rc
-INIT += init.qti.fm.sh
 
 #IPROUTE2
 IPROUTE2 := ip
@@ -359,6 +374,8 @@ LIBCOPYBIT += copybit.sdm630
 LIBCOPYBIT += copybit.sdm660
 LIBCOPYBIT += copybit.sda630
 LIBCOPYBIT += copybit.apq8098_latv
+LIBCOPYBIT += copybit.sdm710
+LIBCOPYBIT += copybit.qcs605
 
 #LIBGESTURES
 LIBGESTURES := libgestures
@@ -388,11 +405,15 @@ LIBGRALLOC += gralloc.msm8952
 LIBGRALLOC += gralloc.msm8937
 LIBGRALLOC += gralloc.msm8953
 LIBGRALLOC += gralloc.msm8998
+LIBGRALLOC += gralloc.msmnile
 LIBGRALLOC += gralloc.sdm845
 LIBGRALLOC += gralloc.apq8098_latv
 LIBGRALLOC += libmemalloc
 LIBGRALLOC += gralloc.sdm630
 LIBGRALLOC += gralloc.sdm660
+LIBGRALLOC += gralloc.sdm710
+LIBGRALLOC += gralloc.qcs605
+LIBGRALLOC += gralloc.$(MSMSTEPPE)
 
 #memtrack
 LIBMEMTRACK := memtrack.default
@@ -409,9 +430,13 @@ LIBMEMTRACK += memtrack.msm8952
 LIBMEMTRACK += memtrack.msm8937
 LIBMEMTRACK += memtrack.msm8953
 LIBMEMTRACK += memtrack.msm8998
+LIBMEMTRACK += memtrack.msmnile
 LIBMEMTRACK += memtrack.sdm660
 LIBMEMTRACK += memtrack.sdm845
 LIBMEMTRACK += memtrack.apq8098_latv
+LIBMEMTRACK += memtrack.sdm710
+LIBMEMTRACK += memtrack.qcs605
+LIBMEMTRACK += memtrack.$(MSMSTEPPE)
 
 #LIBLIGHTS
 LIBLIGHTS := lights.msm8660
@@ -435,9 +460,13 @@ LIBLIGHTS += lights.msm8952
 LIBLIGHTS += lights.msm8937
 LIBLIGHTS += lights.msm8953
 LIBLIGHTS += lights.msm8998
+LIBLIGHTS += lights.msmnile
 LIBLIGHTS += lights.sdm660
 LIBLIGHTS += lights.sdm845
 LIBLIGHTS += lights.apq8098_latv
+LIBLIGHTS += lights.sdm710
+LIBLIGHTS += lights.qcs605
+LIBLIGHTS += lights.$(MSMSTEPPE)
 
 #LIBHWCOMPOSER
 LIBHWCOMPOSER := hwcomposer.msm8660
@@ -462,9 +491,13 @@ LIBHWCOMPOSER += hwcomposer.msm8952
 LIBHWCOMPOSER += hwcomposer.msm8937
 LIBHWCOMPOSER += hwcomposer.msm8953
 LIBHWCOMPOSER += hwcomposer.msm8998
+LIBHWCOMPOSER += hwcomposer.msmnile
 LIBHWCOMPOSER += hwcomposer.sdm660
 LIBHWCOMPOSER += hwcomposer.sdm845
 LIBHWCOMPOSER += hwcomposer.apq8098_latv
+LIBHWCOMPOSER += hwcomposer.sdm710
+LIBHWCOMPOSER += hwcomposer.qcs605
+LIBHWCOMPOSER += hwcomposer.$(MSMSTEPPE)
 
 #LIBAUDIOPARAM -- Exposing AudioParameter as dynamic library for SRS TruMedia to work
 LIBAUDIOPARAM := libaudioparameter
@@ -525,6 +558,10 @@ MM_AUDIO += libstagefright_soft_flacdec
 MM_CORE := libmm-omxcore
 MM_CORE += libOmxCore
 
+#WFD
+MM_WFD := libwfdaac
+
+
 #MM_VIDEO
 MM_VIDEO := ast-mm-vdec-omx-test
 MM_VIDEO += beat
@@ -543,6 +580,7 @@ MM_VIDEO += mm-venc-omx-test720p
 MM_VIDEO += mm-video-driver-test
 MM_VIDEO += mm-video-encdrv-test
 MM_VIDEO += ExoplayerDemo
+MM_VIDEO += libaacwrapper
 
 #NQ_NFC
 NQ_NFC := NQNfcNci
@@ -552,19 +590,21 @@ NQ_NFC += nfc_nci.nqx.default
 NQ_NFC += libp61-jcop-kit
 NQ_NFC += com.nxp.nfc.nq
 NQ_NFC += com.nxp.nfc.nq.xml
+NQ_NFC += com.gsma.services.nfc
 NQ_NFC += libpn547_fw.so
 NQ_NFC += libpn548ad_fw.so
 NQ_NFC += libnfc-brcm.conf
 NQ_NFC += libnfc-brcm_NCI2_0.conf
+NQ_NFC += libnfc-nci.conf
+NQ_NFC += libnfc-nci_NCI2_0.conf
 NQ_NFC += libnfc-nxp_default.conf
 NQ_NFC += nqnfcee_access.xml
 NQ_NFC += nqnfcse_access.xml
 NQ_NFC += Tag
 NQ_NFC += nqnfcinfo
 NQ_NFC += com.android.nfc_extras
-NQ_NFC += vendor.nxp.hardware.nfc@1.0-impl
-NQ_NFC += android.hardware.nfc@1.0-impl
-NQ_NFC += vendor.nxp.hardware.nfc@1.0-service
+NQ_NFC += vendor.nxp.hardware.nfc@1.1-service
+NQ_NFC += nfc_nci.nqx.default.hw
 PRODUCT_PROPERTY_OVERRIDES += ro.hardware.nfc_nci=nqx.default
 
 #OPENCORE
@@ -618,6 +658,8 @@ STMLOG := libstm-log
 #THERMAL_HAL
 THERMAL_HAL := thermal.msm8998
 THERMAL_HAL += thermal.sdm845
+THERMAL_HAL += thermal.sdm710
+THERMAL_HAL += thermal.qcs605
 THERMAL_HAL += thermal.sdm660
 THERMAL_HAL += thermal.msm8996
 THERMAL_HAL += thermal.msm8953
@@ -639,6 +681,7 @@ TSLIB_EXTERNAL += ts
 
 #VR_HAL
 VR_HAL := vr.msm8998
+VR_HAL += vr.sdm845
 
 #QRGND
 QRGND := qrngd
@@ -682,6 +725,9 @@ IMS_SETTINGS := imssettings
 IMS_EXT := ims-ext-common
 IMS_EXT += ConfURIDialer
 
+#Android Telephony library
+PRODUCT_BOOT_JARS += qtiNetworkLib
+
 #CRDA
 CRDA := crda
 CRDA += regdbdump
@@ -707,26 +753,18 @@ WIGIG += libwigig_utils
 WIGIG += libwigig_flashaccess
 WIGIG += libwigig_pciaccess
 
+#FD_LEAK
+FD_LEAK := libc_leak_detector
+
 PRODUCT_PACKAGES += netutils-wrapper-1.0
-
-ifeq ($(TARGET_HAS_LOW_RAM),true)
-    DELAUN := Launcher3Go
-else
-    # Live Wallpapers
-    PRODUCT_PACKAGES += \
-            LiveWallpapers \
-            LiveWallpapersPicker \
-            VisualizationWallpapers
-
-    DELAUN := Launcher3
-endif
 
 PRODUCT_PACKAGES += $(ALSA_HARDWARE)
 PRODUCT_PACKAGES += $(ALSA_UCM)
 PRODUCT_PACKAGES += $(ANGLE)
-PRODUCT_PACKAGES += $(APPOPS_POLICY)
 PRODUCT_PACKAGES += $(AUDIO_HARDWARE)
 PRODUCT_PACKAGES += $(AUDIO_POLICY)
+PRODUCT_PACKAGES += $(AUDIO_WRAPPER)
+PRODUCT_PACKAGES += $(AUDIO_HAL_TEST_APPS)
 PRODUCT_PACKAGES += $(TINY_ALSA_TEST_APPS)
 PRODUCT_PACKAGES += $(AMPLOADER)
 PRODUCT_PACKAGES += $(APPS)
@@ -742,6 +780,7 @@ PRODUCT_PACKAGES += $(RCS)
 PRODUCT_PACKAGES += $(CONNECTIVITY)
 PRODUCT_PACKAGES += $(CHARGER)
 PRODUCT_PACKAGES += $(CURL)
+PRODUCT_PACKAGES += $(DASH)
 PRODUCT_PACKAGES += $(DATA_OS)
 PRODUCT_PACKAGES += $(E2FSPROGS)
 PRODUCT_PACKAGES += $(EBTABLES)
@@ -777,12 +816,11 @@ PRODUCT_PACKAGES += $(LIBQCOMUI)
 PRODUCT_PACKAGES += $(LIBQDUTILS)
 PRODUCT_PACKAGES += $(LIBQDMETADATA)
 PRODUCT_PACKAGES += $(LIBPOWER)
-PRODUCT_PACKAGES += $(LIBTHERMAL)
-PRODUCT_PACKAGES += $(LIBVR)
 PRODUCT_PACKAGES += $(LOC_API)
 PRODUCT_PACKAGES += $(MEDIA_PROFILES)
 PRODUCT_PACKAGES += $(MM_AUDIO)
 PRODUCT_PACKAGES += $(MM_CORE)
+PRODUCT_PACKAGES += $(MM_WFD)
 PRODUCT_PACKAGES += $(MM_VIDEO)
 ifeq ($(strip $(TARGET_USES_NQ_NFC)),true)
 PRODUCT_PACKAGES += $(NQ_NFC)
@@ -812,42 +850,30 @@ PRODUCT_PACKAGES += $(WLAN)
 PRODUCT_PACKAGES += $(IPACM)
 PRODUCT_PACKAGES += $(FSTMAN)
 PRODUCT_PACKAGES += $(WIGIG)
+PRODUCT_PACKAGES += $(FD_LEAK)
 PRODUCT_PACKAGES += $(IMS_EXT)
 # Temp workarround for b/36603742
 PRODUCT_PACKAGES += android.hidl.manager@1.0-java
 
 PRODUCT_PACKAGES += android.hardware.drm@1.0-impl
-ifneq ($(strip $(TARGET_HAS_LOW_RAM)),true)
 PRODUCT_PACKAGES += android.hardware.drm@1.0-service
+PRODUCT_PACKAGES += android.hardware.drm@1.1-service.widevine
+PRODUCT_PACKAGES += android.hardware.drm@1.1-service.clearkey
+ifeq ($(strip $(OTA_FLAG_FOR_DRM)),true)
+PRODUCT_PACKAGES += move_widevine_data.sh
 endif
-PRODUCT_PACKAGES += android.hardware.drm@1.0-service.widevine
-PRODUCT_PACKAGES += librs_jni
-
-# Filesystem management tools
-PRODUCT_PACKAGES += \
-    make_ext4fs \
-    setup_fs
-
-# Qcril configuration file
-PRODUCT_PACKAGES += qcril.db
-
-# MSM updater library
-#PRODUCT_PACKAGES += librecovery_updater_msm
 
 # vcard jar
 PRODUCT_PACKAGES += vcard
 
-# healthd libaray expanded for mode charger
-PRODUCT_PACKAGES += libhealthd.msm
-
-# UI Enhancements for ECT and Deflect feature
-PRODUCT_PACKAGES += qtiImsInCallUi
-
-#NANOPB_LIBRARY_NAME := libnanopb-c-2.8.0
+# tcmiface for tcm support
+PRODUCT_PACKAGES += tcmiface
 
 PRODUCT_COPY_FILES := \
     frameworks/native/data/etc/android.hardware.camera.flash-autofocus.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.flash-autofocus.xml \
     frameworks/native/data/etc/android.hardware.camera.front.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.front.xml \
+    frameworks/native/data/etc/android.hardware.camera.full.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.full.xml\
+    frameworks/native/data/etc/android.hardware.camera.raw.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.raw.xml\
     frameworks/native/data/etc/android.hardware.telephony.gsm.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.telephony.gsm.xml \
     frameworks/native/data/etc/android.hardware.telephony.cdma.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.telephony.cdma.xml \
     frameworks/native/data/etc/android.hardware.location.gps.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.location.gps.xml \
@@ -862,12 +888,8 @@ PRODUCT_COPY_FILES := \
     frameworks/native/data/etc/android.hardware.usb.host.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.usb.host.xml \
     frameworks/native/data/etc/android.hardware.bluetooth.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.bluetooth.xml \
     frameworks/native/data/etc/android.hardware.bluetooth_le.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.bluetooth_le.xml \
-
-ifneq ($(call is-board-platform-in-list, msm8909 msm8916 msm8952),true)
-PRODUCT_COPY_FILES += \
-    frameworks/native/data/etc/android.hardware.camera.full.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.full.xml\
-    frameworks/native/data/etc/android.hardware.camera.raw.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.raw.xml
-endif
+    frameworks/native/data/etc/android.software.device_id_attestation.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.device_id_attestation.xml \
+    frameworks/native/data/etc/android.software.verified_boot.xml:system/etc/permissions/android.software.verified_boot.xml
 
 # Bluetooth configuration files
 #PRODUCT_COPY_FILES += \
@@ -877,6 +899,7 @@ endif
     system/bluetooth/data/input.conf:system/etc/bluetooth/input.conf \
     system/bluetooth/data/network.conf:system/etc/bluetooth/network.conf \
 
+
 #ifeq ($(BOARD_HAVE_BLUETOOTH_BLUEZ),true)
 #PRODUCT_COPY_FILES += \
     system/bluetooth/data/stack.conf:system/etc/bluetooth/stack.conf
@@ -884,17 +907,21 @@ endif
 
 # gps/location secuity configuration file
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/sec_config:$(TARGET_COPY_OUT_VENDOR)/etc/sec_config
+    $(LOCAL_PATH)/configs/sec_config:$(TARGET_COPY_OUT_VENDOR)/etc/sec_config
 
 #copy codecs_xxx.xml to (TARGET_COPY_OUT_VENDOR)/etc/
 PRODUCT_COPY_FILES += \
     frameworks/av/media/libstagefright/data/media_codecs_google_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_audio.xml \
-    frameworks/av/media/libstagefright/data/media_codecs_google_video.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_video.xml \
-    frameworks/av/media/libstagefright/data/media_codecs_google_video_le.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_video_le.xml \
     frameworks/av/media/libstagefright/data/media_codecs_google_telephony.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_telephony.xml \
     frameworks/av/media/libstagefright/data/media_codecs_google_video.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_video.xml \
+    frameworks/av/media/libstagefright/data/media_codecs_google_video_le.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_video_le.xml \
     $(LOCAL_PATH)/media/media_profiles.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_profiles.xml \
     $(LOCAL_PATH)/media/media_profiles.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_profiles_V1_0.xml
+
+ifneq ($(TARGET_ENABLE_QC_AV_ENHANCEMENTS),true)
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/media/media_codecs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs.xml
+endif
 
 ifeq ($(strip $(TARGET_USES_NQ_NFC)),true)
 PRODUCT_COPY_FILES += \
@@ -908,23 +935,15 @@ endif
 ifneq ($(TARGET_NOT_SUPPORT_VULKAN),true)
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.vulkan.level-0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.level-0.xml \
-    frameworks/native/data/etc/android.hardware.vulkan.version-1_0_3.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.version-1_0_3.xml \
+    frameworks/native/data/etc/android.hardware.vulkan.version-1_1.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.version-1_1.xml \
     frameworks/native/data/etc/android.hardware.vulkan.compute-0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.compute-0.xml
 endif
-
-#Enabling Ring Tones
-#include frameworks/base/data/sounds/OriginalAudio.mk
 
 #Enabling video for live effects
 -include frameworks/base/data/videos/VideoPackage1.mk
 
 #skip boot jars check
 SKIP_BOOT_JARS_CHECK := true
-
-ifeq ($(TARGET_BUILD_VARIANT),user)
-PRODUCT_DEFAULT_PROPERTY_OVERRIDES+= \
-    ro.adb.secure=1
-endif
 
 #Camera QC extends API
 ifeq ($(strip $(TARGET_USES_QTIC_EXTENSION)),true)
@@ -934,9 +953,12 @@ endif
 # Preloading QPerformance jar to ensure faster perflocks in Boost Framework
 PRODUCT_BOOT_JARS += QPerformance
 
+# Preloading UxPerformance jar to ensure faster UX invoke in Boost Framework
+PRODUCT_BOOT_JARS += UxPerformance
+
 # OEM Unlock reporting
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
-    ro.oem_unlock_supported=true
+    ro.oem_unlock_supported=1
 
 PRODUCT_PROPERTY_OVERRIDES += persist.radio.multisim.config=dsds
 
