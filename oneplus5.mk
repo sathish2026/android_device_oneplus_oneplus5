@@ -1,18 +1,32 @@
-TARGET_USES_AOSP := true
+TARGET_USES_AOSP := false
 TARGET_USES_QCOM_BSP := false
 DEVICE_PACKAGE_OVERLAYS := $(LOCAL_PATH)/overlay
 TARGET_USES_NQ_NFC := true
-TARGET_USES_QTIC_EXTENSION := true
 
 TARGET_USES_AOSP_FOR_AUDIO := false
 TARGET_ENABLE_QC_AV_ENHANCEMENTS := true
 TARGET_DISABLE_DASH := true
 
-# Default A/B configuration.
+# Default vendor configuration.
+ENABLE_VENDOR_IMAGE := true
+
+# A/B configuration
 ENABLE_AB := false
 
-# Flag to enable and support NQ3XX chipsets
-NQ3XX_PRESENT := true
+# Disable QTIC until it's brought up in split system/vendor
+# configuration to avoid compilation breakage.
+ifeq ($(ENABLE_VENDOR_IMAGE), true)
+#TARGET_USES_QTIC := false
+#TARGET_USES_QTIC_EXTENSION := false
+endif
+
+TARGET_KERNEL_VERSION := 4.4
+
+ifeq ($(TARGET_USES_NQ_NFC),true)
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/nfc/libnfc-brcm.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-nci.conf
+    $(LOCAL_PATH)/configs/nfc/libnfc-nxp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-nxp.conf
+endif
 
 # enable the SVA in UI area
 TARGET_USE_UI_SVA := true
@@ -22,25 +36,39 @@ PRODUCT_CHARACTERISTICS := nosdcard
 
 # Video codec configuration files
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/media/media_profiles.xml:system/etc/media_profiles.xml \
-    $(LOCAL_PATH)/media/media_profiles.xml:system/vendor/etc/media_profiles_vendor.xml \
-    $(LOCAL_PATH)/media/media_codecs.xml:system/vendor/etc/media_codecs.xml \
-    $(LOCAL_PATH)/media/media_codecs_performance.xml:system/vendor/etc/media_codecs_performance.xml \
-    $(LOCAL_PATH)/media/media_codecs_vendor_audio.xml:system/vendor/etc/media_codecs_vendor_audio.xml
+    $(LOCAL_PATH)/configs/media/media_profiles.xml:system/etc/media_profiles.xml \
+    $(LOCAL_PATH)/configs/media/media_profiles.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_profiles_vendor.xml \
+    $(LOCAL_PATH)/configs/media/media_codecs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs.xml \
+    $(LOCAL_PATH)/configs/media/media_codecs_vendor.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor.xml \
+    $(LOCAL_PATH)/configs/media/media_codecs_performance.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_performance.xml \
+    $(LOCAL_PATH)/configs/media/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml
+
+# video seccomp policy files
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/seccomp/mediacodec-seccomp.policy:$(TARGET_COPY_OUT_VENDOR)/etc/seccomp_policy/mediacodec.policy \
+    $(LOCAL_PATH)/configs/seccomp/mediaextractor-seccomp.policy:$(TARGET_COPY_OUT_VENDOR)/etc/seccomp_policy/mediaextractor.policy
 
 # Power
 PRODUCT_PACKAGES += \
     android.hardware.power@1.0-service \
     android.hardware.power@1.0-impl
 
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/power/power_profile.xml:$(TARGET_COPY_OUT_VENDOR)/etc/power_profile.xml \
+    $(LOCAL_PATH)/configs/power/power_profile_5t.xml:system/vendor/etc/power_profile_5t.xml
+
+# Usb
 PRODUCT_PACKAGES += \
     android.hardware.usb@1.0-service
 
-# Add support for whitelisted apps
-# PRODUCT_COPY_FILES += $(LOCAL_PATH)/whitelistedapps.xml:system/etc/whitelistedapps.xml
+TARGET_USES_MKE2FS := true
 
 #QTIC flag
 -include $(QCPATH)/common/config/qtic-config.mk
+
+# Add property to enable CABL
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.vendor.display.cabl=2
 
 $(call inherit-product, $(LOCAL_PATH)/common64.mk)
 
@@ -55,12 +83,27 @@ PRODUCT_PROPERTY_OVERRIDES  += \
 # Enable features in video HAL that can compile only on this platform
 TARGET_USES_MEDIA_EXTENSIONS := true
 
+#Android EGL implementation
+PRODUCT_PACKAGES += libGLES_android
+PRODUCT_BOOT_JARS += tcmiface
+PRODUCT_BOOT_JARS += telephony-ext
+
+PRODUCT_PACKAGES += telephony-ext
+
+ifneq ($(strip $(QCPATH)),)
+PRODUCT_BOOT_JARS += WfdCommon
+#Android oem shutdown hook
+PRODUCT_BOOT_JARS += oem-services
+endif
+
 # system prop for Bluetooth SOC type
 PRODUCT_PROPERTY_OVERRIDES += \
-    qcom.bluetooth.soc=cherokee
+    vendor.qcom.bluetooth.soc=cherokee
 
-DEVICE_MANIFEST_FILE := $(LOCAL_PATH)/manifest.xml
-DEVICE_MATRIX_FILE   := $(LOCAL_PATH)/compatibility_matrix.xml
+DEVICE_MANIFEST_FILE := $(LOCAL_PATH)/configs/manifest.xml
+DEVICE_MATRIX_FILE   := $(LOCAL_PATH)/configs/compatibility_matrix.xml
+DEVICE_FRAMEWORK_MANIFEST_FILE := $(LOCAL_PATH)/configs/framework_manifest.xml
+DEVICE_FRAMEWORK_COMPATIBILITY_MATRIX_FILE := $(LOCAL_PATH)/configs/vendor_framework_compatibility_matrix.xml
 
 # Audio configuration file
 -include $(TOPDIR)hardware/qcom/audio/configs/msm8998/msm8998.mk
@@ -70,32 +113,33 @@ PRODUCT_PACKAGES += \
     audio.r_submix.default \
     libqcompostprocbundle \
     libqcomvisualizer \
-    libqcomvoiceprocessing
-
-# Audio
-PRODUCT_PACKAGES += \
-    android.hardware.audio@2.0-impl \
+    libqcomvoiceprocessing \
+    android.hardware.audio@4.0-impl \
     android.hardware.audio@2.0-service
-
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/audio/mixer_paths_tasha.xml:system/vendor/etc/mixer_paths_tasha.xml \
-    $(LOCAL_PATH)/audio/mixer_paths_tasha_op5t.xml:system/vendor/etc/mixer_paths_tasha_op5t.xml \
-    $(LOCAL_PATH)/audio/audio_platform_info.xml:system/vendor/etc/audio_platform_info.xml
 
 PRODUCT_PACKAGES += android.hardware.media.omx@1.0-impl
 
+# Audio
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/audio/mixer_paths_tasha.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_tasha.xml \
+    $(LOCAL_PATH)/configs/audio/mixer_paths_tasha_op5t.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_tasha_op5t.xml \
+    $(LOCAL_PATH)/configs/audio/audio_platform_info.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_platform_info.xml
+
+# Sensor HAL conf file
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/sensors/hals.conf:$(TARGET_COPY_OUT_VENDOR)/etc/sensors/hals.conf
+
 # Exclude TOF sensor from InputManager
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/excluded-input-devices.xml:system/etc/excluded-input-devices.xml
+    $(LOCAL_PATH)/configs/excluded-input-devices.xml:system/etc/excluded-input-devices.xml
 
 # WLAN driver configuration file
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/wifi/WCNSS_qcom_cfg.ini:system/vendor/etc/wifi/WCNSS_qcom_cfg.ini \
-    $(LOCAL_PATH)/wifi/wifi_concurrency_cfg.txt:system/vendor/etc/wifi/wifi_concurrency_cfg.txt
+    $(LOCAL_PATH)/wifi/WCNSS_qcom_cfg.ini:$(TARGET_COPY_OUT_VENDOR)/etc/wifi/WCNSS_qcom_cfg.ini
 
 # MIDI feature
 PRODUCT_COPY_FILES += \
-    frameworks/native/data/etc/android.software.midi.xml:system/vendor/etc/permissions/android.software.midi.xml
+    frameworks/native/data/etc/android.software.midi.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.midi.xml
 
 PRODUCT_PACKAGES += \
     wpa_supplicant_overlay.conf \
@@ -122,14 +166,12 @@ PRODUCT_PACKAGES += \
     android.hardware.memtrack@1.0-service \
     android.hardware.light@2.0-impl \
     android.hardware.light@2.0-service \
-    android.hardware.configstore@1.0-service \
-    android.hardware.broadcastradio@1.0-impl
+    android.hardware.configstore@1.0-service
 
 PRODUCT_PACKAGES += \
     vendor.display.color@1.0-service \
-    vendor.display.color@1.0-impl
-
-PRODUCT_PACKAGES += libdisplayconfig
+    vendor.display.color@1.0-impl \
+    libdisplayconfig
 
 # Android_net
 PRODUCT_PACKAGES += \
@@ -145,6 +187,8 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += camera.device@3.2-impl
 PRODUCT_PACKAGES += camera.device@1.0-impl
 PRODUCT_PACKAGES += android.hardware.camera.provider@2.4-impl
+# Enable binderized camera HAL
+PRODUCT_PACKAGES += android.hardware.camera.provider@2.4-service
 
 # Display
 PRODUCT_PACKAGES += \
@@ -157,11 +201,13 @@ PRODUCT_PACKAGES += \
     libvehiclenetwork-native
 
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/gps/etc/flp.conf:system/vendor/etc/flp.conf \
-    $(LOCAL_PATH)/gps/etc/izat.conf:system/vendor/etc/izat.conf \
-    $(LOCAL_PATH)/gps/etc/lowi.conf:system/vendor/etc/lowi.conf \
-    $(LOCAL_PATH)/gps/etc/sap.conf:system/vendor/etc/sap.conf \
-    $(LOCAL_PATH)/gps/etc/xtwifi.conf:system/vendor/etc/xtwifi.conf
+    $(LOCAL_PATH)/configs/gps/apdr.conf:$(TARGET_COPY_OUT_VENDOR)/etc/apdr.conf \
+    $(LOCAL_PATH)/configs/gps/flp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/flp.conf \
+    $(LOCAL_PATH)/configs/gps/gps.conf:$(TARGET_COPY_OUT_VENDOR)/etc/gps.conf \
+    $(LOCAL_PATH)/configs/gps/izat.conf:$(TARGET_COPY_OUT_VENDOR)/etc/izat.conf \
+    $(LOCAL_PATH)/configs/gps/lowi.conf:$(TARGET_COPY_OUT_VENDOR)/etc/lowi.conf \
+    $(LOCAL_PATH)/configs/gps/sap.conf:$(TARGET_COPY_OUT_VENDOR)/etc/sap.conf \
+    $(LOCAL_PATH)/configs/gps/xtwifi.conf:$(TARGET_COPY_OUT_VENDOR)/etc/xtwifi.conf
 
 # Sensors
 PRODUCT_PACKAGES += android.hardware.sensors@1.0-service
@@ -169,17 +215,17 @@ PRODUCT_PACKAGES += android.hardware.sensors@1.0-impl
 
 # Sensor features
 PRODUCT_COPY_FILES += \
-    frameworks/native/data/etc/android.hardware.sensor.accelerometer.xml:system/vendor/etc/permissions/android.hardware.sensor.accelerometer.xml \
-    frameworks/native/data/etc/android.hardware.sensor.compass.xml:system/vendor/etc/permissions/android.hardware.sensor.compass.xml \
-    frameworks/native/data/etc/android.hardware.sensor.gyroscope.xml:system/vendor/etc/permissions/android.hardware.sensor.gyroscope.xml \
-    frameworks/native/data/etc/android.hardware.sensor.light.xml:system/vendor/etc/permissions/android.hardware.sensor.light.xml \
-    frameworks/native/data/etc/android.hardware.sensor.proximity.xml:system/vendor/etc/permissions/android.hardware.sensor.proximity.xml \
-    frameworks/native/data/etc/android.hardware.sensor.barometer.xml:system/vendor/etc/permissions/android.hardware.sensor.barometer.xml \
-    frameworks/native/data/etc/android.hardware.sensor.stepcounter.xml:system/vendor/etc/permissions/android.hardware.sensor.stepcounter.xml \
-    frameworks/native/data/etc/android.hardware.sensor.stepdetector.xml:system/vendor/etc/permissions/android.hardware.sensor.stepdetector.xml \
-    frameworks/native/data/etc/android.hardware.sensor.ambient_temperature.xml:system/vendor/etc/permissions/android.hardware.sensor.ambient_temperature.xml \
-    frameworks/native/data/etc/android.hardware.sensor.relative_humidity.xml:system/vendor/etc/permissions/android.hardware.sensor.relative_humidity.xml \
-    frameworks/native/data/etc/android.hardware.sensor.hifi_sensors.xml:system/vendor/etc/permissions/android.hardware.sensor.hifi_sensors.xml
+    frameworks/native/data/etc/android.hardware.sensor.accelerometer.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.accelerometer.xml \
+    frameworks/native/data/etc/android.hardware.sensor.compass.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.compass.xml \
+    frameworks/native/data/etc/android.hardware.sensor.gyroscope.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.gyroscope.xml \
+    frameworks/native/data/etc/android.hardware.sensor.light.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.light.xml \
+    frameworks/native/data/etc/android.hardware.sensor.proximity.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.proximity.xml \
+    frameworks/native/data/etc/android.hardware.sensor.barometer.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.barometer.xml \
+    frameworks/native/data/etc/android.hardware.sensor.stepcounter.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.stepcounter.xml \
+    frameworks/native/data/etc/android.hardware.sensor.stepdetector.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.stepdetector.xml \
+    frameworks/native/data/etc/android.hardware.sensor.ambient_temperature.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.ambient_temperature.xml \
+    frameworks/native/data/etc/android.hardware.sensor.relative_humidity.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.relative_humidity.xml \
+    frameworks/native/data/etc/android.hardware.sensor.hifi_sensors.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.hifi_sensors.xml
 
 PRODUCT_PACKAGES += libsensor1_system
 PRODUCT_PACKAGES += libsensor_reg_system
@@ -187,30 +233,37 @@ PRODUCT_PACKAGES += libqmi_cci_system
 PRODUCT_PACKAGES += libdiag_system
 
 # High performance VR feature
-#PRODUCT_COPY_FILES += \
-#    frameworks/native/data/etc/android.hardware.vr.high_performance.xml:system/etc/permissions/android.hardware.vr.high_performance.xml
+PRODUCT_COPY_FILES += \
+    frameworks/native/data/etc/android.hardware.vr.high_performance.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vr.high_performance.xml
 
 # Keylayouts
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/keylayout/fpc1020.kl:system/usr/keylayout/fpc1020.kl \
-    $(LOCAL_PATH)/keylayout/gf_input.kl:system/usr/keylayout/gf_input.kl \
-    $(LOCAL_PATH)/keylayout/synaptics.kl:system/usr/keylayout/synaptics.kl
+    $(LOCAL_PATH)/configs/keylayout/fpc1020.kl:$(TARGET_COPY_OUT_VENDOR)/usr/keylayout/fpc1020.kl \
+    $(LOCAL_PATH)/configs/keylayout/gf_input.kl:$(TARGET_COPY_OUT_VENDOR)/usr/keylayout/gf_input.kl \
+    $(LOCAL_PATH)/configs/keylayout/synaptics.kl:$(TARGET_COPY_OUT_VENDOR)/usr/keylayout/synaptics.kl
+
+# VB xml
+PRODUCT_COPY_FILES += \
+    frameworks/native/data/etc/android.software.verified_boot.xml:system/etc/permissions/android.software.verified_boot.xml
 
 # MSM IRQ Balancer configuration file
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/msm_irqbalance.conf:system/vendor/etc/msm_irqbalance.conf
-
-# NFC
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/nfc/libnfc-nxp.conf:system/vendor/etc/libnfc-nxp.conf
+PRODUCT_COPY_FILES += $(LOCAL_PATH)/configs/msm_irqbalance.conf:$(TARGET_COPY_OUT_VENDOR)/etc/msm_irqbalance.conf
 
 # Powerhint configuration file
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/powerhint.xml:system/vendor/etc/powerhint.xml
+PRODUCT_COPY_FILES += $(LOCAL_PATH)/configs/powerhint.xml:$(TARGET_COPY_OUT_VENDOR)/etc/powerhint.xml
 
 #for android_filesystem_config.h
 PRODUCT_PACKAGES += \
     fs_config_files
+
+# dm-verity configuration
+PRODUCT_SUPPORTS_VERITY := true
+PRODUCT_SYSTEM_VERITY_PARTITION := /dev/block/bootdevice/by-name/system
+PRODUCT_VENDOR_VERITY_PARTITION := /dev/blck/bootdevice/by-name/vendor
+
+PRODUCT_FULL_TREBLE_OVERRIDE := true
+
+PRODUCT_VENDOR_MOVE_ENABLED := true
 
 # List of AAPT configurations
 PRODUCT_AAPT_CONFIG += xlarge large
@@ -220,41 +273,39 @@ PRODUCT_PACKAGES += lights.qcom
 
 #for wlan
 PRODUCT_PACKAGES += \
-       wificond \
-       wifilogd
+	wificond \
+	wifilogd
 
 #Healthd packages
-PRODUCT_PACKAGES += android.hardware.health@1.0-impl \
-                   android.hardware.health@1.0-convert \
-                   android.hardware.health@1.0-service \
-                   libhealthd.msm
+PRODUCT_PACKAGES += android.hardware.health@2.0-impl \
+                    android.hardware.health@2.0-service \
+                    libhealthd.msm
 
-#Enable AOSP KEYMASTER and GATEKEEPER HIDLs
-PRODUCT_PACKAGES += android.hardware.gatekeeper@1.0-impl \
-                    android.hardware.gatekeeper@1.0-service \
-                    android.hardware.keymaster@3.0-impl \
-                    android.hardware.keymaster@3.0-service
+#FEATURE_OPENGLES_EXTENSION_PACK support string config file
+PRODUCT_COPY_FILES += \
+	frameworks/native/data/etc/android.hardware.opengles.aep.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.opengles.aep.xml
 
-PRODUCT_PROPERTY_OVERRIDES += rild.libpath=/system/vendor/lib64/libril-qc-qmi-1.so
+TARGET_SUPPORT_SOTER := true
+
+#Enable QTI KEYMASTER and GATEKEEPER HIDLs
+ifeq ($(ENABLE_VENDOR_IMAGE), true)
+KMGK_USE_QTI_SERVICE := true
+endif
+
+#Enable KEYMASTER 4.0
+ENABLE_KM_4_0 := true
 
 #VR
 PRODUCT_PACKAGES += android.hardware.vr@1.0-impl \
                     android.hardware.vr@1.0-service
-
 #Thermal
 PRODUCT_PACKAGES += android.hardware.thermal@1.0-impl \
                     android.hardware.thermal@1.0-service
 
-#Android fingerprint daemon implementation
+# Fingerprint
 PRODUCT_PACKAGES += \
     fingerprintd \
     android.hardware.biometrics.fingerprint@2.1-service
-
-
-# HIDL
-PRODUCT_PACKAGES += \
-    android.hidl.manager@1.0-java \
-    android.hidl.manager@1.0
 
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.fingerprint.xml:system/vendor/etc/permissions/android.hardware.fingerprint.xml
@@ -263,9 +314,19 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.opengles.aep.xml:system/vendor/etc/permissions/android.hardware.opengles.aep.xml
 
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/power/power_profile.xml:system/vendor/etc/power_profile.xml \
-    $(LOCAL_PATH)/power/power_profile_5t.xml:system/vendor/etc/power_profile_5t.xml
+# HIDL
+PRODUCT_PACKAGES += \
+    android.hidl.manager@1.0-java \
+    android.hidl.manager@1.0
 
-# Call the proprietary setup
-$(call inherit-product, vendor/oneplus/oneplus5/oneplus5-vendor.mk)
+PRODUCT_PROPERTY_OVERRIDES += rild.libpath=/system/vendor/lib64/libril-qc-qmi-1.so
+PRODUCT_PROPERTY_OVERRIDES += vendor.rild.libpath=/system/vendor/lib64/libril-qc-qmi-1.so
+
+PRODUCT_COMPATIBLE_PROPERTY_OVERRIDE := true
+
+# Enable vndk-sp Libraries
+PRODUCT_PACKAGES += vndk_package
+
+TARGET_MOUNT_POINTS_SYMLINKS := false
+
+$(call inherit-product, build/make/target/product/product_launched_with_p.mk)
